@@ -23,9 +23,7 @@ export function parseOffersFromDocument(
       normalizeMaybeText($(el).find("h1, h2, h3, h4, strong").first().text()) ??
       null;
 
-    const priceMatch = text.match(
-      /(?:^|\s)(\d{1,3}(?:,\d{3})+|\d{4,})(?:\s|$)/,
-    );
+    const priceMatch = text.match(/(\d{1,3}(?:,\d{3})+|\d{4,})/);
     const price = priceMatch ? parsePrice(priceMatch[1]) : null;
 
     const sellerMatch = text.match(
