@@ -4,9 +4,6 @@ import { cleanText } from "./cleanText";
 import { parsePrice } from "./parsePrice";
 import { normalizeMaybeText } from "./normalizeMaybeText";
 
-const getLines = (text: string) =>
-  text.split(/\r?\n/).map(cleanText).filter(Boolean);
-
 export function parseOffersFromDocument(
   html: string,
   expectedStoreType: "BUY" | "SELL",
@@ -15,87 +12,48 @@ export function parseOffersFromDocument(
   const offers: MarketOffer[] = [];
   const seen = new Set<string>();
 
-  $("li").each((_, el) => {
-    const $el = $(el);
+  $('div[class^="card_shop_card_top__"]').each((_, el) => {
+    const $top = $(el);
 
-    const rawText = $el.text();
-    const lines = getLines(rawText);
-
-    if (lines.length === 0) return;
-
-    const joined = lines.join(" | ");
-
-    const hasExpectedType = new RegExp(
-      `\\bType\\s*${expectedStoreType}\\b`,
-      "i",
-    ).test(joined);
-
-    const hasQuantity = /\bQuantity\b/i.test(joined);
-    const hasSeller = /\bSeller\b/i.test(joined);
-
-    if (!hasExpectedType || !hasQuantity || !hasSeller) return;
-
-    const heading =
-      normalizeMaybeText($el.find("h1, h2, h3, h4, strong").first().text()) ??
-      null;
-
-    const priceLine =
-      lines.find((line) => /^\d[\d,]*$/.test(line)) ??
-      lines.find((line) => /\b\d{1,3}(?:,\d{3})+\b/.test(line)) ??
-      null;
-
-    const price =
-      priceLine != null
-        ? parsePrice(priceLine)
-        : (() => {
-            const fallback = joined.match(/\b(\d{1,3}(?:,\d{3})+|\d{4,})\b/);
-            return fallback ? parsePrice(fallback[1]) : null;
-          })();
-
-    const sellerLine = lines.find((line) => /^Seller\b/i.test(line)) ?? null;
-    const stallLine = lines.find((line) => /^Stall Name\b/i.test(line)) ?? null;
-    const quantityLine =
-      lines.find((line) => /^Quantity\b/i.test(line)) ?? null;
-
-    const seller = normalizeMaybeText(
-      sellerLine?.replace(/^Seller\s*[:.•]?\s*/i, "") ?? null,
+    const name = normalizeMaybeText(
+      $top.find('h3[class^="card_item_name__"]').first().text(),
     );
 
-    const stallName = normalizeMaybeText(
-      stallLine?.replace(/^Stall Name\s*[:.•]?\s*/i, "") ?? null,
-    );
-
-    const quantity = quantityLine
-      ? Number(quantityLine.replace(/[^\d]/g, "")) || null
-      : null;
-
-    const name =
-      heading ??
-      normalizeMaybeText(
-        lines.find(
-          (line) =>
-            !/^(Seller|Stall Name|Type|Quantity)\b/i.test(line) &&
-            !/^\d[\d,]*$/.test(line),
-        ) ?? null,
-      );
+    const priceText = $top.find('p[class^="card_item_price__"]').first().text();
+    const price = parsePrice(priceText);
 
     if (!name || price == null || price <= 0) return;
+
+    let $card = $top.parent();
+    let cardText = cleanText($card.text());
+
+    if (
+      !/Quantity/i.test(cardText) ||
+      !new RegExp(`Type\\s*${expectedStoreType}`, "i").test(cardText)
+    ) {
+      $card = $card.parent();
+      cardText = cleanText($card.text());
+    }
+
+    if (
+      !/Quantity/i.test(cardText) ||
+      !new RegExp(`Type\\s*${expectedStoreType}`, "i").test(cardText)
+    ) {
+      return;
+    }
+
+    const quantityMatch = cardText.match(/Quantity\s*[:.•]?\s*(\d+)/i);
+    const quantity = quantityMatch ? Number(quantityMatch[1]) : null;
 
     const offer: MarketOffer = {
       name,
       price,
       quantity,
-      seller,
-      stallName,
+      seller: null,
+      stallName: null,
     };
 
-    const key = [
-      offer.name,
-      offer.price,
-      offer.quantity ?? "",
-      offer.seller ?? "",
-      offer.stallName ?? "",
-    ].join("|");
+    const key = [offer.name, offer.price, offer.quantity ?? ""].join("|");
 
     if (!seen.has(key)) {
       seen.add(key);

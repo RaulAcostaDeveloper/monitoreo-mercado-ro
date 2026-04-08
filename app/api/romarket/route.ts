@@ -1,18 +1,15 @@
-// app/api/romarket/route.ts
-
 import { fetchMarketHtml } from "./lib/ro-market";
+import { WATCHLIST } from "./types";
 import { parseOffersFromDocument } from "./utils/parseOffersFromDocument";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const item = searchParams.get("item") || "Yggdrasil Berry";
-  const serverType = searchParams.get("serverType") || "FREYA";
-  const storeType = (searchParams.get("storeType") || "BUY") as "BUY" | "SELL";
-  const debug = searchParams.get("debug") === "1";
-
+async function getMarketData(
+  item: string,
+  serverType: string,
+  storeType: "BUY" | "SELL",
+) {
   const url = new URL("https://ro.gnjoylatam.com/en/intro/shop-search/trading");
   url.searchParams.set("storeType", storeType);
   url.searchParams.set("serverType", serverType);
@@ -22,31 +19,59 @@ export async function GET(req: Request) {
   const html = await fetchMarketHtml(url.toString());
   const offers = parseOffersFromDocument(html, storeType);
 
-  if (debug) {
-    return Response.json({
-      item,
-      sourceUrl: url.toString(),
-      htmlLength: html.length,
-      hasSearchResultsText: html.includes("Search Results"),
-      hasItemName: html.includes(item),
-      hasTypeBuy: html.includes(`Type ${storeType}`),
-      hasQuantity: html.includes("Quantity"),
-      hasSeller: html.includes("Seller"),
-      snippet: html.slice(
-        Math.max(0, html.indexOf(item) - 300),
-        Math.min(html.length, html.indexOf(item) + 1500),
-      ),
-      totalOffers: offers.length,
-      minPrice: offers[0]?.price ?? null,
-      offers,
-    });
-  }
-
-  return Response.json({
-    item,
+  return {
+    sourceUrl: url.toString(),
     totalOffers: offers.length,
     minPrice: offers[0]?.price ?? null,
     offers,
-    sourceUrl: url.toString(),
+  };
+}
+
+export async function GET() {
+  const results = [];
+
+  for (const watch of WATCHLIST.filter((x) => x.enabled)) {
+    try {
+      const data = await getMarketData(
+        watch.item,
+        watch.serverType,
+        watch.storeType,
+      );
+
+      const matchingOffers = data.offers.filter(
+        (offer) => offer.price <= watch.threshold,
+      );
+
+      const shouldAlert = matchingOffers.length > 0;
+
+      results.push({
+        item: watch.item,
+        serverType: watch.serverType,
+        storeType: watch.storeType,
+        threshold: watch.threshold,
+        shouldAlert,
+        minPrice: data.minPrice,
+        totalOffers: data.totalOffers,
+        matchingOffers,
+        sourceUrl: data.sourceUrl,
+      });
+
+      // luego aquí notifyDiscord si shouldAlert
+    } catch (error) {
+      results.push({
+        item: watch.item,
+        serverType: watch.serverType,
+        storeType: watch.storeType,
+        threshold: watch.threshold,
+        shouldAlert: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  return Response.json({
+    ok: true,
+    checkedAt: new Date().toISOString(),
+    results: results.filter((r) => r.shouldAlert),
   });
 }

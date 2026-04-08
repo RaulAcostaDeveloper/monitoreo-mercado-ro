@@ -11,7 +11,14 @@ export const WATCHLIST: WatchItem[] = [
     item: "Yggdrasil Berry",
     serverType: "FREYA",
     storeType: "BUY",
-    threshold: 60000,
+    threshold: 30000,
+    enabled: true,
+  },
+  {
+    item: "Poison Bottle",
+    serverType: "FREYA",
+    storeType: "BUY",
+    threshold: 30000,
     enabled: true,
   },
 ];
