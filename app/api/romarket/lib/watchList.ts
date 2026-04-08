@@ -1,21 +1,21 @@
-interface WatchList {
+export interface WatchItem {
   id: string;
-  itemName: string;
-  serverType: string;
-  storeType: string;
+  name: string;
+  serverType: "FREYA";
+  storeType: "BUY" | "SELL";
   threshold: number;
-  cooldownMinutes: number;
   enabled: boolean;
 }
 
-export const watchlist: WatchList[] = [
-  {
-    id: "ygg-berry-buy",
-    itemName: "Yggdrasil Berry",
-    serverType: "FREYA" as const,
-    storeType: "BUY" as const,
-    threshold: 24000,
-    cooldownMinutes: 60,
-    enabled: true,
-  },
-];
+export interface MarketSnapshot {
+  itemName: string;
+  minPrice: number | null;
+  foundAt: string;
+  sourceUrl: string;
+  offers: Array<{
+    price: number;
+    quantity: number;
+    seller?: string;
+    stallName?: string;
+  }>;
+}
