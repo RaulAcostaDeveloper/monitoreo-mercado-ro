@@ -1,0 +1,17 @@
+# .github/workflows/market-check.yml
+name: Market Check
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-market:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call market endpoint
+        run: |
+          curl --fail --show-error --silent \
+            "${{ secrets.MARKET_RUN_URL }}"
