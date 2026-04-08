@@ -6,10 +6,10 @@ import { parseOffersFromDocument } from "../utils/parseOffersFromDocument";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getMinPrice(
+async function getMarketData(
   item: string,
   serverType: string,
-  storeType: string,
+  storeType: "BUY" | "SELL",
 ) {
   const url = new URL("https://ro.gnjoylatam.com/en/intro/shop-search/trading");
   url.searchParams.set("storeType", storeType);
@@ -18,7 +18,7 @@ async function getMinPrice(
   url.searchParams.set("sortType", "LOW_PRICE");
 
   const html = await fetchMarketHtml(url.toString());
-  const offers = parseOffersFromDocument(html, "BUY");
+  const offers = parseOffersFromDocument(html, storeType);
 
   return {
     sourceUrl: url.toString(),
@@ -33,21 +33,28 @@ export async function GET() {
 
   for (const watch of WATCHLIST.filter((x) => x.enabled)) {
     try {
-      const data = await getMinPrice(
+      const data = await getMarketData(
         watch.item,
         watch.serverType,
         watch.storeType,
       );
-      const shouldAlert =
-        data.minPrice != null && data.minPrice <= watch.threshold;
+
+      const matchingOffers = data.offers.filter(
+        (offer) => offer.price <= watch.threshold,
+      );
+
+      const shouldAlert = matchingOffers.length > 0;
 
       results.push({
         ...watch,
         ...data,
+        matchingOffers,
         shouldAlert,
       });
 
-      // luego aquí mandas notify()
+      // if (shouldAlert) {
+      //   await notifyDiscord({ watch, matchingOffers, minPrice: data.minPrice });
+      // }
     } catch (error) {
       results.push({
         ...watch,

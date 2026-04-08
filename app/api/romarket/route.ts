@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   url.searchParams.set("sortType", "LOW_PRICE");
 
   const html = await fetchMarketHtml(url.toString());
-  const offers = parseOffersFromDocument(html, "BUY");
+  const offers = parseOffersFromDocument(html, storeType);
 
   if (debug) {
     return Response.json({
