@@ -4,6 +4,17 @@ import { cleanText } from "./cleanText";
 import { parsePrice } from "./parsePrice";
 import { normalizeMaybeText } from "./normalizeMaybeText";
 
+function extractField(cardText: string, label: string, stopWords: string[]) {
+  const stop = stopWords.join("|");
+  const regex = new RegExp(
+    `${label}\\s*[:.•]?\\s*(.+?)(?=\\s*(?:${stop})\\b|$)`,
+    "i",
+  );
+
+  const value = cardText.match(regex)?.[1] ?? null;
+  return normalizeMaybeText(value);
+}
+
 export function parseOffersFromDocument(
   html: string,
   expectedStoreType: "BUY" | "SELL",
@@ -45,15 +56,30 @@ export function parseOffersFromDocument(
     const quantityMatch = cardText.match(/Quantity\s*[:.•]?\s*(\d+)/i);
     const quantity = quantityMatch ? Number(quantityMatch[1]) : null;
 
+    const seller = extractField(cardText, "Seller", ["Type", "Quantity"]);
+    const rawStallName = extractField(cardText, "Stall Name", [
+      "Seller",
+      "Type",
+      "Quantity",
+    ]);
+
+    const stallName = rawStallName === "0" ? null : rawStallName;
+
     const offer: MarketOffer = {
       name,
       price,
       quantity,
-      seller: null,
-      stallName: null,
+      seller,
+      stallName,
     };
 
-    const key = [offer.name, offer.price, offer.quantity ?? ""].join("|");
+    const key = [
+      offer.name,
+      offer.price,
+      offer.quantity ?? "",
+      offer.seller ?? "",
+      offer.stallName ?? "",
+    ].join("|");
 
     if (!seen.has(key)) {
       seen.add(key);

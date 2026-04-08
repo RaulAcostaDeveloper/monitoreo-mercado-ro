@@ -1,4 +1,5 @@
 export type WatchItem = {
+  id: string;
   item: string;
   serverType: "FREYA";
   storeType: "BUY" | "SELL";
@@ -8,6 +9,7 @@ export type WatchItem = {
 
 export const WATCHLIST: WatchItem[] = [
   {
+    id: "ygg-berry-buy",
     item: "Yggdrasil Berry",
     serverType: "FREYA",
     storeType: "BUY",
@@ -15,6 +17,7 @@ export const WATCHLIST: WatchItem[] = [
     enabled: true,
   },
   {
+    id: "poison-bottle-buy",
     item: "Poison Bottle",
     serverType: "FREYA",
     storeType: "BUY",
