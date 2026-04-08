@@ -1,56 +1,53 @@
 import { load } from "cheerio";
-
 import { MarketOffer } from "../lib/ro-market";
 import { cleanText } from "./cleanText";
 import { parsePrice } from "./parsePrice";
+import { normalizeMaybeText } from "./normalizeMaybeText";
 
-export function parseOffersFromDocument(html: string): MarketOffer[] {
+export function parseOffersFromDocument(
+  html: string,
+  expectedStoreType: "BUY" | "SELL",
+): MarketOffer[] {
   const $ = load(html);
-
   const offers: MarketOffer[] = [];
+  const seen = new Set<string>();
 
-  $("li, div, article, section").each((_, el) => {
+  $("li").each((_, el) => {
     const text = cleanText($(el).text());
 
-    const hasCoreFields =
-      text.includes("Seller") &&
-      text.includes("Quantity") &&
-      text.includes("Type BUY");
+    if (!text.includes(`Type ${expectedStoreType}`)) return;
+    if (!text.includes("Quantity")) return;
+    if (!text.includes("Seller")) return;
 
-    if (!hasCoreFields) return;
+    const name =
+      normalizeMaybeText($(el).find("h1, h2, h3, h4, strong").first().text()) ??
+      null;
 
-    // Nombre: intenta sacar el heading dentro del bloque
-    const heading =
-      cleanText($(el).find("h1, h2, h3, h4, strong").first().text()) || null;
-
-    // Precio: toma la primera línea/número grande razonable del bloque
     const priceMatch = text.match(
       /(?:^|\s)(\d{1,3}(?:,\d{3})+|\d{4,})(?:\s|$)/,
     );
     const price = priceMatch ? parsePrice(priceMatch[1]) : null;
 
     const sellerMatch = text.match(
-      /Seller\s*[:.]?\s*(.+?)(?=\s+Type\s+\w+\s+Quantity|\s+Quantity|\s*$)/i,
+      /Seller\s*[:.•]?\s*(.+?)(?=\s+Type\s+\w+|\s+Quantity|\s*$)/i,
     );
+
     const stallMatch = text.match(
       /Stall Name\s*[:.•]?\s*(.+?)(?=\s+Seller|\s+Type\s+\w+|\s+Quantity|\s*$)/i,
     );
+
     const quantityMatch = text.match(/Quantity\s*[:.]?\s*(\d+)/i);
 
-    if (!heading || price == null) return;
+    if (!name || price == null || price <= 0) return;
 
-    offers.push({
-      name: heading,
+    const offer: MarketOffer = {
+      name,
       price,
       quantity: quantityMatch ? Number(quantityMatch[1]) : null,
-      seller: sellerMatch ? cleanText(sellerMatch[1]) : null,
-      stallName: stallMatch ? cleanText(stallMatch[1]) : null,
-    });
-  });
+      seller: normalizeMaybeText(sellerMatch?.[1] ?? null),
+      stallName: normalizeMaybeText(stallMatch?.[1] ?? null),
+    };
 
-  // Deduplicación básica por combinación de campos
-  const unique = new Map<string, MarketOffer>();
-  for (const offer of offers) {
     const key = [
       offer.name,
       offer.price,
@@ -59,8 +56,11 @@ export function parseOffersFromDocument(html: string): MarketOffer[] {
       offer.stallName ?? "",
     ].join("|");
 
-    if (!unique.has(key)) unique.set(key, offer);
-  }
+    if (!seen.has(key)) {
+      seen.add(key);
+      offers.push(offer);
+    }
+  });
 
-  return [...unique.values()].sort((a, b) => a.price - b.price);
+  return offers.sort((a, b) => a.price - b.price);
 }

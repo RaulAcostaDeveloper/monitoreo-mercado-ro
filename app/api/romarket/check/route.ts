@@ -18,7 +18,7 @@ async function getMinPrice(
   url.searchParams.set("sortType", "LOW_PRICE");
 
   const html = await fetchMarketHtml(url.toString());
-  const offers = parseOffersFromDocument(html);
+  const offers = parseOffersFromDocument(html, "BUY");
 
   return {
     sourceUrl: url.toString(),
