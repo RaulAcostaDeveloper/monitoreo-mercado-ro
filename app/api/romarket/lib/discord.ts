@@ -8,6 +8,7 @@ type NotifyPayload = {
   minPrice: number | null;
   matchingOffers: MarketOffer[];
   sourceUrl: string;
+  alertChannel: string;
 };
 
 function formatNumber(n: number) {
@@ -26,10 +27,12 @@ function formatOffer(offer: MarketOffer) {
 }
 
 export async function notifyDiscord(payload: NotifyPayload) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  const webhookUrl = process.env[payload.alertChannel];
 
   if (!webhookUrl) {
-    throw new Error("Missing DISCORD_WEBHOOK_URL");
+    throw new Error(
+      `Missing Discord webhook env var for alertChannel="${payload.alertChannel}"`,
+    );
   }
 
   const topOffers = payload.matchingOffers.slice(0, 5);
@@ -44,6 +47,7 @@ export async function notifyDiscord(payload: NotifyPayload) {
           `Threshold: ${formatNumber(payload.threshold)}`,
           `Lowest found: ${payload.minPrice != null ? formatNumber(payload.minPrice) : "N/A"}`,
           `Matches: ${payload.matchingOffers.length}`,
+          `Channel: ${payload.alertChannel}`,
         ].join("\n"),
         fields: topOffers.map((offer, index) => ({
           name: `Offer ${index + 1}`,

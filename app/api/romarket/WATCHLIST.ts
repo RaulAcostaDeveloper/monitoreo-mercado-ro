@@ -5,6 +5,7 @@ export type WatchItem = {
   storeType: "BUY" | "SELL";
   threshold: number;
   enabled: boolean;
+  alertChannel: string;
 };
 
 export const WATCHLIST: WatchItem[] = [
@@ -15,6 +16,7 @@ export const WATCHLIST: WatchItem[] = [
     storeType: "BUY",
     threshold: 30000,
     enabled: true,
+    alertChannel: "poison_bottle",
   },
   {
     id: "poison-bottle-buy",
@@ -23,5 +25,6 @@ export const WATCHLIST: WatchItem[] = [
     storeType: "BUY",
     threshold: 30000,
     enabled: true,
+    alertChannel: "poison_bottle",
   },
 ];

@@ -14,6 +14,7 @@ type CheckResult = {
   totalOffers: number;
   matchingOffers: MarketOffer[];
   sourceUrl: string;
+  alertChannel: string;
   shouldAlert: boolean;
   shouldNotify: boolean;
 };
@@ -23,6 +24,7 @@ type CheckError = {
   serverType: string;
   storeType: "BUY" | "SELL";
   threshold: number;
+  alertChannel: string;
   error: string;
 };
 
@@ -103,6 +105,7 @@ export async function runWatchlistCheck({ notify = false } = {}) {
           minPrice: data.minPrice,
           matchingOffers,
           sourceUrl: data.sourceUrl,
+          alertChannel: watch.alertChannel,
         });
       }
 
@@ -121,6 +124,7 @@ export async function runWatchlistCheck({ notify = false } = {}) {
         totalOffers: data.totalOffers,
         matchingOffers,
         sourceUrl: data.sourceUrl,
+        alertChannel: watch.alertChannel,
         shouldAlert,
         shouldNotify,
       });
@@ -130,6 +134,7 @@ export async function runWatchlistCheck({ notify = false } = {}) {
         serverType: watch.serverType,
         storeType: watch.storeType,
         threshold: watch.threshold,
+        alertChannel: watch.alertChannel,
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
