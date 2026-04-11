@@ -1,9 +1,9 @@
 export async function GET() {
-  const webhook = process.env.DISCORD_WEBHOOK_TEST;
+  const webhook = process.env.DISCORD_WEBHOOK_POISON_BOTTLE;
 
   if (!webhook) {
     return Response.json(
-      { ok: false, error: "No existe DISCORD_WEBHOOK_TEST" },
+      { ok: false, error: "No existe DISCORD_WEBHOOK_POISON_BOTTLE" },
       { status: 500 },
     );
   }
