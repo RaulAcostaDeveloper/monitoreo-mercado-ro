@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { WATCHLIST, type WatchItem } from "../WATCHLIST";
 import { parseOffersFromDocument } from "../utils/parseOffersFromDocument";
-import { notifyDiscord } from "./discord";
+import { notifyDiscord, notifyDiscordError } from "./discord";
 import { fetchMarketHtml, type MarketOffer } from "./ro-market";
 import { getAlertState, setAlertState } from "./state";
 
@@ -69,7 +69,19 @@ function buildAlertHash(offers: MarketOffer[]) {
     .digest("hex");
 }
 
-export async function runWatchlistCheck({ notify = false } = {}) {
+function validateWatchlistEnv() {
+  for (const watch of WATCHLIST.filter((x) => x.enabled)) {
+    if (!process.env[watch.alertChannel]) {
+      throw new Error(
+        `Missing Discord webhook env var for alertChannel="${watch.alertChannel}"`,
+      );
+    }
+  }
+}
+
+export async function runWatchlistCheck() {
+  validateWatchlistEnv();
+
   const results: CheckResult[] = [];
   const errors: CheckError[] = [];
 
@@ -96,7 +108,7 @@ export async function runWatchlistCheck({ notify = false } = {}) {
           prevState.lastStatus === "above" ||
           prevState.lastAlertHash !== currentHash);
 
-      if (notify && shouldNotify) {
+      if (shouldNotify) {
         await notifyDiscord({
           item: watch.item,
           serverType: watch.serverType,
@@ -129,14 +141,42 @@ export async function runWatchlistCheck({ notify = false } = {}) {
         shouldNotify,
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+
       errors.push({
         item: watch.item,
         serverType: watch.serverType,
         storeType: watch.storeType,
         threshold: watch.threshold,
         alertChannel: watch.alertChannel,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: message,
       });
+
+      try {
+        await notifyDiscordError({
+          title: "RO Market watchlist failed",
+          message: [
+            `Item: ${watch.item}`,
+            `Server: ${watch.serverType}`,
+            `StoreType: ${watch.storeType}`,
+            `Threshold: ${watch.threshold}`,
+            `Channel: ${watch.alertChannel}`,
+            `Error: ${message}`,
+          ].join("\n"),
+        });
+      } catch (notifyError) {
+        const notifyMessage =
+          notifyError instanceof Error ? notifyError.message : "Unknown error";
+
+        errors.push({
+          item: watch.item,
+          serverType: watch.serverType,
+          storeType: watch.storeType,
+          threshold: watch.threshold,
+          alertChannel: watch.alertChannel,
+          error: `Failed to send error notification: ${notifyMessage}`,
+        });
+      }
     }
   }
 

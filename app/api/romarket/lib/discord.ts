@@ -11,6 +11,11 @@ type NotifyPayload = {
   alertChannel: string;
 };
 
+type NotifyErrorPayload = {
+  title: string;
+  message: string;
+};
+
 function formatNumber(n: number) {
   return new Intl.NumberFormat("en-US").format(n);
 }
@@ -73,5 +78,40 @@ export async function notifyDiscord(payload: NotifyPayload) {
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Discord webhook failed: ${res.status} ${text}`);
+  }
+}
+
+export async function notifyDiscordError(payload: NotifyErrorPayload) {
+  const webhookUrl = process.env.romarket_errors;
+
+  if (!webhookUrl) {
+    throw new Error('Missing Discord webhook env var for "romarket_errors"');
+  }
+
+  const body = {
+    content: `⚠️ ${payload.title}`,
+    embeds: [
+      {
+        title: payload.title,
+        description: payload.message,
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    allowed_mentions: {
+      parse: [],
+    },
+  };
+
+  const res = await fetch(`${webhookUrl}?wait=true`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord error webhook failed: ${res.status} ${text}`);
   }
 }

@@ -15,12 +15,13 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await runWatchlistCheck({ notify: true });
+  const { checkedAt, results, errors } = await runWatchlistCheck();
 
   return Response.json({
-    ok: result.errors.length === 0,
-    checkedAt: result.checkedAt,
-    sent: result.results.filter((x) => x.shouldNotify).length,
-    errors: result.errors,
+    ok: errors.length === 0,
+    checkedAt,
+    checked: results.length,
+    notified: results.filter((r) => r.shouldNotify).length,
+    errors,
   });
 }
