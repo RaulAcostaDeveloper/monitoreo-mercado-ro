@@ -22,6 +22,7 @@ export async function GET() {
         totalOffers: r.totalOffers,
         matchingOffers: r.matchingOffers,
         sourceUrl: r.sourceUrl,
+        alertChannel: r.alertChannel,
         shouldNotify: r.shouldNotify,
       })),
     errors,
