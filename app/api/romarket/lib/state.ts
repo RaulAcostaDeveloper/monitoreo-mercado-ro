@@ -6,17 +6,23 @@ export type AlertState = {
   updatedAt: string;
 };
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? Redis.fromEnv()
-    : null;
+function getRedis() {
+  if (
+    !process.env.UPSTASH_REDIS_REST_URL ||
+    !process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
+    throw new Error("Missing Upstash Redis env vars");
+  }
+
+  return Redis.fromEnv();
+}
 
 export async function getAlertState(key: string): Promise<AlertState | null> {
-  if (!redis) return null;
+  const redis = getRedis();
   return redis.get<AlertState>(key);
 }
 
 export async function setAlertState(key: string, value: AlertState) {
-  if (!redis) return;
+  const redis = getRedis();
   await redis.set(key, value);
 }
