@@ -16,7 +16,7 @@ export const WATCHLIST: WatchItem[] = [
     storeType: "BUY",
     threshold: 30000,
     enabled: true,
-    alertChannel: "poison_bottle",
+    alertChannel: "yggdrasil_berry",
   },
   {
     id: "poison-bottle-buy",
@@ -25,6 +25,6 @@ export const WATCHLIST: WatchItem[] = [
     storeType: "BUY",
     threshold: 30000,
     enabled: true,
-    alertChannel: "yggdrasil_berry",
+    alertChannel: "poison_bottle",
   },
 ];
