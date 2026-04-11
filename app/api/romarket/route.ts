@@ -15,13 +15,22 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const { checkedAt, results, errors } = await runWatchlistCheck();
+  try {
+    const { checkedAt, results, errors } = await runWatchlistCheck();
 
-  return Response.json({
-    ok: errors.length === 0,
-    checkedAt,
-    checked: results.length,
-    notified: results.filter((r) => r.shouldNotify).length,
-    errors,
-  });
+    return Response.json({
+      ok: errors.length === 0,
+      checkedAt,
+      checked: results.length,
+      notified: results.filter((r) => r.shouldNotify).length,
+      errors,
+    });
+  } catch (error) {
+    console.error("[ROMARKET_ROUTE_ERROR]", error);
+
+    return Response.json(
+      { ok: false, error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
 }
