@@ -11,43 +11,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  trigger:
+  trigger-romarket:
     runs-on: ubuntu-latest
     timeout-minutes: 3
 
     steps:
       - name: Trigger RO monitor
-        shell: bash
         env:
-          ROMARKET_URL: https://monitoreo-mercado-ro.vercel.app/api/romarket
           ROMARKET_CRON_SECRET: ${{ secrets.ROMARKET_CRON_SECRET }}
         run: |
-          set -euo pipefail
-
-          RESPONSE_FILE="$(mktemp)"
-
-          HTTP_CODE="$(
-            curl \
-              --silent \
-              --show-error \
-              --request POST \
-              --url "$ROMARKET_URL" \
-              --header "x-romarket-secret: $ROMARKET_CRON_SECRET" \
-              --header "Content-Type: application/json" \
-              --data '{"source":"github-actions","trigger":"schedule"}' \
-              --retry 3 \
-              --retry-all-errors \
-              --connect-timeout 15 \
-              --max-time 120 \
-              --output "$RESPONSE_FILE" \
-              --write-out "%{http_code}"
-          )"
-
-          echo "HTTP_CODE=$HTTP_CODE"
-          cat "$RESPONSE_FILE"
-          echo
-
-          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "Request failed"
-            exit 1
-          fi
+          curl -X POST "https://monitoreo-mercado-ro.vercel.app/api/romarket" \
+            -H "x-romarket-secret: $ROMARKET_CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"source":"github-actions","trigger":"schedule"}'
