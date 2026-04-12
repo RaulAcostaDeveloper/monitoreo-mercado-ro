@@ -42,13 +42,13 @@ export const WATCHLIST: WatchItem[] = [
     alertChannel: "advanced_field_manual",
   },
   {
-    id: "advanced-field-manual",
+    id: "blacksmith-blessing",
     item: "Blacksmith Blessing",
     search: "Blacksmith Blessing",
     serverType: "FREYA",
     storeType: "BUY",
     threshold: 1800000,
     enabled: true,
-    alertChannel: "advanced_field_manual",
+    alertChannel: "blacksmith_blessing",
   },
 ];
