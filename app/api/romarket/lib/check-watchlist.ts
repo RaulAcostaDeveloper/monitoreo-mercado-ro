@@ -4,6 +4,7 @@ import { parseOffersFromDocument } from "../utils/parseOffersFromDocument";
 import { notifyDiscord, notifyDiscordError } from "./discord";
 import { fetchMarketHtml, type MarketOffer } from "./ro-market";
 import { getAlertState, setAlertState } from "./state";
+import { isOfferMatchingWatchItem } from "../utils/isOfferMatchingWatchItem";
 
 type CheckResult = {
   item: string;
@@ -93,7 +94,11 @@ export async function runWatchlistCheck() {
         watch.storeType,
       );
 
-      const matchingOffers = data.offers.filter(
+      const itemOffers = data.offers.filter((offer) =>
+        isOfferMatchingWatchItem(watch, offer.name),
+      );
+
+      const matchingOffers = itemOffers.filter(
         (offer) => offer.price <= watch.threshold,
       );
 
