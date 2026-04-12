@@ -1,0 +1,26 @@
+name: RO Market Scheduler
+
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+      timezone: "America/Mexico_City"
+  workflow_dispatch:
+
+concurrency:
+  group: romarket-scheduler
+  cancel-in-progress: true
+
+jobs:
+  trigger-romarket:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Trigger RO monitor
+        env:
+          ROMARKET_CRON_SECRET: ${{ secrets.ROMARKET_CRON_SECRET }}
+        run: |
+          curl -X POST "https://monitoreo-mercado-ro.vercel.app/api/romarket" \
+            -H "x-romarket-secret: $ROMARKET_CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"source":"github-actions","trigger":"schedule"}'

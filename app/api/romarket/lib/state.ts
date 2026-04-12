@@ -6,17 +6,23 @@ export type AlertState = {
   updatedAt: string;
 };
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? Redis.fromEnv()
-    : null;
+function getRedis() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+
+  if (!url || !token) {
+    throw new Error("Missing KV_REST_API_URL or KV_REST_API_TOKEN");
+  }
+
+  return new Redis({ url, token });
+}
 
 export async function getAlertState(key: string): Promise<AlertState | null> {
-  if (!redis) return null;
+  const redis = getRedis();
   return redis.get<AlertState>(key);
 }
 
 export async function setAlertState(key: string, value: AlertState) {
-  if (!redis) return;
+  const redis = getRedis();
   await redis.set(key, value);
 }
