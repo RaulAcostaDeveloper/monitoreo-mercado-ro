@@ -51,4 +51,14 @@ export const WATCHLIST: WatchItem[] = [
     enabled: true,
     alertChannel: "blacksmith_blessing",
   },
+  {
+    id: "strawberry-single",
+    item: "Strawberry",
+    search: "Strawberry",
+    serverType: "FREYA",
+    storeType: "BUY",
+    threshold: 2000,
+    enabled: true,
+    alertChannel: "strawberry_single",
+  },
 ];
