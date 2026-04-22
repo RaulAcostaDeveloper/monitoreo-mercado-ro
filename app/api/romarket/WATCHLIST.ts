@@ -57,7 +57,7 @@ export const WATCHLIST: WatchItem[] = [
     search: "Strawberry",
     serverType: "FREYA",
     storeType: "BUY",
-    threshold: 2000,
+    threshold: 1100,
     enabled: true,
     alertChannel: "strawberry_single",
   },
