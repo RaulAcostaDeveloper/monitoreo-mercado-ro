@@ -1,10 +1,8 @@
-import crypto from "node:crypto";
-import { WATCHLIST, type WatchItem } from "../WATCHLIST";
+import { WATCHLIST } from "../WATCHLIST";
 import { parseOffersFromDocument } from "../utils/parseOffersFromDocument";
+import { isOfferMatchingWatchItem } from "../utils/isOfferMatchingWatchItem";
 import { notifyDiscord, notifyDiscordError } from "./discord";
 import { fetchMarketHtml, type MarketOffer } from "./ro-market";
-import { getAlertState, setAlertState } from "./state";
-import { isOfferMatchingWatchItem } from "../utils/isOfferMatchingWatchItem";
 
 type CheckResult = {
   item: string;
@@ -34,7 +32,9 @@ async function getMarketData(
   serverType: string,
   storeType: "BUY" | "SELL",
 ) {
+  // Mandar así para quitar los request
   const url = new URL("https://ro.gnjoylatam.com/en/intro/shop-search/trading");
+
   url.searchParams.set("storeType", storeType);
   url.searchParams.set("serverType", serverType);
   url.searchParams.set("searchWord", item);
@@ -49,25 +49,6 @@ async function getMarketData(
     minPrice: offers[0]?.price ?? null,
     offers,
   };
-}
-
-function buildStateKey(watch: WatchItem) {
-  return `romarket:state:${watch.id}`;
-}
-
-function buildAlertHash(offers: MarketOffer[]) {
-  const stablePayload = offers.map((offer) => ({
-    name: offer.name,
-    price: offer.price,
-    quantity: offer.quantity,
-    seller: offer.seller,
-    stallName: offer.stallName,
-  }));
-
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(stablePayload))
-    .digest("hex");
 }
 
 function validateWatchlistEnv() {
@@ -103,15 +84,8 @@ export async function runWatchlistCheck() {
       );
 
       const shouldAlert = matchingOffers.length > 0;
-      const currentHash = shouldAlert ? buildAlertHash(matchingOffers) : null;
-      const stateKey = buildStateKey(watch);
-      const prevState = await getAlertState(stateKey);
 
-      const shouldNotify =
-        shouldAlert &&
-        (!prevState ||
-          prevState.lastStatus === "above" ||
-          prevState.lastAlertHash !== currentHash);
+      const shouldNotify = shouldAlert;
 
       if (shouldNotify) {
         await notifyDiscord({
@@ -125,12 +99,6 @@ export async function runWatchlistCheck() {
           alertChannel: watch.alertChannel,
         });
       }
-
-      await setAlertState(stateKey, {
-        lastStatus: shouldAlert ? "below" : "above",
-        lastAlertHash: currentHash,
-        updatedAt: new Date().toISOString(),
-      });
 
       results.push({
         item: watch.item,
