@@ -2,7 +2,7 @@ name: RO Market Scheduler
 
 on:
   schedule:
-    - cron: "0,20,40 9-20 * * 0,2-6" # cada 20 minutos, de 9 AM a 8 PM, de martes a domingo
+    - cron: "0,20,40 9-20 * * *" # cada 20 minutos, de 9 AM a 8 PM, de martes a domingo
       timezone: "America/Mexico_City"
   workflow_dispatch:
 
