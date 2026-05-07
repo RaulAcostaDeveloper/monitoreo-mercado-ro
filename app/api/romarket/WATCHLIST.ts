@@ -61,4 +61,14 @@ export const WATCHLIST: WatchItem[] = [
     enabled: true,
     alertChannel: "strawberry_single",
   },
+  {
+    id: "oridecon-single",
+    item: "Oridecon",
+    search: "Oridecon",
+    serverType: "FREYA",
+    storeType: "BUY",
+    threshold: 10000,
+    enabled: true,
+    alertChannel: "oridecon_single",
+  },
 ];
