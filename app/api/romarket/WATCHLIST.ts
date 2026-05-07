@@ -67,7 +67,7 @@ export const WATCHLIST: WatchItem[] = [
     search: "Oridecon",
     serverType: "FREYA",
     storeType: "BUY",
-    threshold: 10000,
+    threshold: 4000,
     enabled: true,
     alertChannel: "oridecon_single",
   },
